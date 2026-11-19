@@ -5,8 +5,15 @@ using Tabseeker.Core;
 namespace Tabseeker;
 
 /// <summary>One row in a folder or search list. Size/date are read lazily, so virtualized search lists only stat visible rows.</summary>
-public sealed class FileItem
+public sealed class FileItem : System.ComponentModel.INotifyPropertyChanged
 {
+    public event System.ComponentModel.PropertyChangedEventHandler? PropertyChanged;
+
+    /// <summary>Shows the memo mark next to the name.</summary>
+    public bool HasMemo => MemoController.Store?.HasMemo(FullPath) ?? false;
+
+    public void RefreshMemo() => PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(nameof(HasMemo)));
+
     private bool _statLoaded;
     private long _size = -1;
     private DateTime _modified;

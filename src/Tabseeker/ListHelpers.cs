@@ -16,6 +16,7 @@ public interface IShell
     void AddFavorite(string path);
     void ViewChanged(FrameworkElement view);
     bool ShowHidden { get; }
+    MemoController Memos { get; }
 }
 
 internal static class ListHelpers

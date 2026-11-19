@@ -84,10 +84,15 @@
             <Setter Property="Foreground" Value="{StaticResource Muted}"/>
         </Style>
 
+        <BooleanToVisibilityConverter x:Key="BoolVis"/>
+
+        <!-- name cell: hovering the name text (Tag=MemoAnchor) opens the memo bubble; the note mark shows a memo exists -->
         <DataTemplate x:Key="NameCell">
             <StackPanel Orientation="Horizontal">
                 <Image Source="{Binding Icon}" Width="16" Height="16" Margin="0,0,6,0"/>
-                <TextBlock Text="{Binding ShownName}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                <TextBlock Tag="MemoAnchor" Text="{Binding ShownName}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Background="Transparent"/>
+                <TextBlock Text="&#xE70B;" FontFamily="Segoe MDL2 Assets" FontSize="11" Foreground="#C9A227" Margin="6,1,0,0"
+                           VerticalAlignment="Center" Visibility="{Binding HasMemo, Converter={StaticResource BoolVis}}"/>
             </StackPanel>
         </DataTemplate>
     </Application.Resources>

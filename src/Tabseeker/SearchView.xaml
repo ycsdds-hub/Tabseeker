@@ -7,7 +7,8 @@
             <TextBlock x:Name="Header" Foreground="{StaticResource Muted}" TextTrimming="CharacterEllipsis">
                 위쪽 검색창에 입력하면 모든 드라이브에서 즉시 찾습니다.  예: <Run FontFamily="Consolas" Foreground="#111827">보고서 ext:pdf;hwp</Run>,
                 <Run FontFamily="Consolas" Foreground="#111827">*.psd</Run>, <Run FontFamily="Consolas" Foreground="#111827">folder: 사진</Run>,
-                <Run FontFamily="Consolas" Foreground="#111827">projects\src !test</Run>, <Run FontFamily="Consolas" Foreground="#111827">a|b</Run>
+                <Run FontFamily="Consolas" Foreground="#111827">projects\src !test</Run>, <Run FontFamily="Consolas" Foreground="#111827">a|b</Run>,
+                메모 내용으로 찾기 <Run FontFamily="Consolas" Foreground="#111827">memo: 드라이버</Run>
             </TextBlock>
         </Border>
         <Border DockPanel.Dock="Bottom" Background="{StaticResource Chrome}" BorderBrush="{StaticResource Line}" BorderThickness="0,1,0,0" Padding="8,3">

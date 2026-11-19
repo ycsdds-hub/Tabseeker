@@ -36,6 +36,7 @@ public partial class FolderView : UserControl
         _refreshTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(350) };
         _refreshTimer.Tick += (_, _) => { _refreshTimer.Stop(); Refresh(); };
         ListHelpers.EnableDragOut(List);
+        shell.Memos.Attach(List);
         PreviewKeyDown += View_PreviewKeyDown;
         Navigate(path, record: false, selectName: selectName);
     }
@@ -313,6 +314,7 @@ public partial class FolderView : UserControl
             case Key.Back: GoUp(); e.Handled = true; break;
             case Key.Delete: DeleteSelected(mods == ModifierKeys.Shift); e.Handled = true; break;
             case Key.F2: Rename(); e.Handled = true; break;
+            case Key.M when mods == ModifierKeys.Control: _shell.Memos.OpenForSelected(List); e.Handled = true; break;
             case Key.C when mods == ModifierKeys.Control: FileOps.ToClipboard(ListHelpers.Selected(List).Select(s => s.FullPath).ToList(), false); e.Handled = true; break;
             case Key.X when mods == ModifierKeys.Control: FileOps.ToClipboard(ListHelpers.Selected(List).Select(s => s.FullPath).ToList(), true); e.Handled = true; break;
             case Key.V when mods == ModifierKeys.Control: Paste(); e.Handled = true; break;
@@ -368,6 +370,7 @@ public partial class FolderView : UserControl
             menu.Items.Add(ListHelpers.Item("복사", () => FileOps.ToClipboard(sel.Select(s => s.FullPath).ToList(), false), "Ctrl+C", !pc));
             menu.Items.Add(ListHelpers.Item("경로 복사", () => FileOps.CopyPaths(sel.Select(s => s.FullPath)), "Ctrl+Shift+C"));
             menu.Items.Add(new Separator());
+            menu.Items.Add(ListHelpers.Item(first.HasMemo ? "메모 보기/고치기" : "메모 쓰기", () => _shell.Memos.OpenForSelected(List), "Ctrl+M", sel.Count == 1));
             menu.Items.Add(ListHelpers.Item("이름 바꾸기", Rename, "F2", !pc && sel.Count == 1));
             menu.Items.Add(ListHelpers.Item("삭제 (휴지통)", () => DeleteSelected(false), "Delete", !pc));
             menu.Items.Add(new Separator());

@@ -11,6 +11,8 @@ namespace Tabseeker;
 public partial class SearchView : UserControl
 {
     private const int MaxShown = 50_000;
+    /// <summary>"memo: words" searches memo text (and memo paths) instead of file names.</summary>
+    public const string MemoPrefix = "memo:";
 
     private readonly IShell _shell;
     private readonly IndexService _index;
@@ -31,8 +33,11 @@ public partial class SearchView : UserControl
         _index = index;
         InitializeComponent();
         ListHelpers.EnableDragOut(List);
+        shell.Memos.Attach(List);
         UpdateStatus();
     }
+
+    private bool IsMemoQuery => Query.TrimStart().StartsWith(MemoPrefix, StringComparison.OrdinalIgnoreCase);
 
     public void SetQuery(string text)
     {
@@ -50,6 +55,16 @@ public partial class SearchView : UserControl
         _cts?.Cancel();
         var cts = _cts = new CancellationTokenSource();
         int version = ++_version;
+        if (IsMemoQuery && MemoController.Store is { } memos)
+        {
+            // newest memos first; folders/files that no longer exist are still listed (dimmed by the shell icon) so their memo can be read
+            var sw = Stopwatch.StartNew();
+            var words = Query.TrimStart()[MemoPrefix.Length..];
+            var found = memos.Search(words).Select(m =>
+                new FileItem(m.Path, Path.GetFileName(m.Path) is { Length: > 0 } n ? n : m.Path, Directory.Exists(m.Path))).ToList();
+            Show(found, found.Count, sw.ElapsedMilliseconds, quiet);
+            return;
+        }
         var ix = _index.Index;
         var q = SearchQuery.Parse(Query);
         if (q.IsEmpty || ix == null)
@@ -102,6 +117,11 @@ public partial class SearchView : UserControl
 
     private void UpdateStatus()
     {
+        if (IsMemoQuery)
+        {
+            Status.Text = $"메모 {_total:N0}개 (최근 수정 순) — 이름에 마우스를 올리면 메모가 보입니다";
+            return;
+        }
         if (!_index.IsReady) { Status.Text = "색인을 만드는 중입니다… 처음 한 번만 시간이 걸리고, 다음부터는 바로 시작합니다."; return; }
         if (Query.Trim().Length == 0) { Status.Text = $"전체 {(_index.Index?.Count ?? 0):N0}개 항목에서 검색"; return; }
         var s = $"{_total:N0}개 결과 ({_elapsedMs}ms)";
@@ -160,6 +180,7 @@ public partial class SearchView : UserControl
                 var name = Prompt.Ask("이름 바꾸기", "새 이름:", sel[0].Name);
                 if (name != null) FileOps.Rename(sel[0].FullPath, name);
                 e.Handled = true; break;
+            case Key.M when mods == ModifierKeys.Control: _shell.Memos.OpenForSelected(List); e.Handled = true; break;
             case Key.C when mods == ModifierKeys.Control: FileOps.ToClipboard(sel.Select(s => s.FullPath).ToList(), false); e.Handled = true; break;
             case Key.X when mods == ModifierKeys.Control: FileOps.ToClipboard(sel.Select(s => s.FullPath).ToList(), true); e.Handled = true; break;
             case Key.C when mods == (ModifierKeys.Control | ModifierKeys.Shift): FileOps.CopyPaths(sel.Select(s => s.FullPath)); e.Handled = true; break;
@@ -184,6 +205,7 @@ public partial class SearchView : UserControl
         menu.Items.Add(ListHelpers.Item("복사", () => FileOps.ToClipboard(sel.Select(s => s.FullPath).ToList(), false), "Ctrl+C"));
         menu.Items.Add(ListHelpers.Item("경로 복사", () => FileOps.CopyPaths(sel.Select(s => s.FullPath)), "Ctrl+Shift+C"));
         menu.Items.Add(new Separator());
+        menu.Items.Add(ListHelpers.Item(first.HasMemo ? "메모 보기/고치기" : "메모 쓰기", () => _shell.Memos.OpenForSelected(List), "Ctrl+M", sel.Count == 1));
         menu.Items.Add(ListHelpers.Item("삭제 (휴지통)", () => FileOps.Delete(sel.Select(s => s.FullPath).ToList(), false), "Delete"));
         menu.Items.Add(ListHelpers.Item("속성", () => FileOps.Properties(first.FullPath)));
     }

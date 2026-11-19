@@ -49,6 +49,7 @@ public partial class MainWindow : Window, IShell
     private Point? _tabDragStart;
 
     public bool ShowHidden => _settings.ShowHidden;
+    public MemoController Memos { get; }
 
     public MainWindow(string[] args)
     {
@@ -56,6 +57,16 @@ public partial class MainWindow : Window, IShell
         _settings = AppSettings.Load();
         TabsHost.ItemsSource = _tabs;
         HiddenItem.IsChecked = _settings.ShowHidden;
+        MemoEmptyItem.IsChecked = _settings.MemoHoverForEmpty;
+
+        var memoStore = Core.MemoStore.OpenDefault(AppSettings.Dir);
+        Memos = new MemoController(this, memoStore) { HoverForEmpty = _settings.MemoHoverForEmpty };
+        if (memoStore.LoadResult is Core.MemoLoadResult.RecoveredFromBackup or Core.MemoLoadResult.Corrupt)
+            Dispatcher.BeginInvoke(() => MessageBox.Show(this,
+                memoStore.LoadResult == Core.MemoLoadResult.RecoveredFromBackup
+                    ? "메모 데이터베이스가 Tabseeker 밖에서 바뀌었거나 손상되어, 바로 전 백업으로 되돌렸습니다."
+                    : "메모 데이터베이스를 읽을 수 없어 빈 상태로 시작합니다. 손상된 파일은 따로 보관해 두었습니다.",
+                "Tabseeker 메모", MessageBoxButton.OK, MessageBoxImage.Warning), DispatcherPriority.Loaded);
         NavColumn.Width = new GridLength(Math.Clamp(_settings.NavWidth, 120, 480));
         RestorePlacement();
 
@@ -122,6 +133,7 @@ public partial class MainWindow : Window, IShell
         if (_active != null) _active.IsActive = false;
         _active = tab;
         tab.IsActive = true;
+        Memos.Hide();
         Host.Content = tab.View;
         Title = $"{tab.Title} — Tabseeker";
         if (tab.View is SearchView sv)
@@ -502,6 +514,20 @@ public partial class MainWindow : Window, IShell
 
     private void Reindex_Click(object sender, RoutedEventArgs e) => _index.RequestRebuild();
 
+    private void MemoEmpty_Click(object sender, RoutedEventArgs e)
+    {
+        _settings.MemoHoverForEmpty = MemoEmptyItem.IsChecked;
+        Memos.HoverForEmpty = MemoEmptyItem.IsChecked;
+        _settings.Save();
+    }
+
+    private void MemoList_Click(object sender, RoutedEventArgs e)
+    {
+        SearchBox.Text = SearchView.MemoPrefix;
+        SearchBox.Focus();
+        SearchBox.CaretIndex = SearchBox.Text.Length;
+    }
+
     private void Help_Click(object sender, RoutedEventArgs e) => MessageBox.Show(this,
 @"[탭]
 Ctrl+T 새 탭 · Ctrl+W 닫기 · Ctrl+Shift+T 닫은 탭 다시 열기
@@ -518,7 +544,12 @@ F2 이름 바꾸기 · Delete 휴지통 · Ctrl+C/X/V · Ctrl+Shift+C 경로 복
 단어 여러 개 = AND   a|b = OR   !단어 = 제외   ""띄어 쓴 말""
 *.pdf  보고?  = 와일드카드      ext:pdf;hwp  file:  folder:
 폴더\이름 = 경로로 찾기      regex:^IMG_\d+
-결과 Enter = 열기 · Ctrl+Enter = 들어있는 폴더를 새 탭으로",
+결과 Enter = 열기 · Ctrl+Enter = 들어있는 폴더를 새 탭으로
+
+[메모]
+이름 위에 마우스를 잠시 올리면 이름 옆에 메모 말풍선이 뜸 — 바로 입력, 자동 저장
+Ctrl+M = 선택한 항목 메모 쓰기 · 오른쪽 아래 모서리를 끌어 크기 조절 · Esc 닫기
+메모가 있는 이름 옆에는 노트 표시 · 검색창에 memo: 단어 = 메모 내용으로 찾기",
         "단축키 / 검색 문법", MessageBoxButton.OK, MessageBoxImage.Information);
 
     private void About_Click(object sender, RoutedEventArgs e) => MessageBox.Show(this,

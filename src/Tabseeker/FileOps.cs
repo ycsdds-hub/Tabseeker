@@ -105,6 +105,7 @@ internal static class FileOps
             if (string.Equals(target, path, StringComparison.Ordinal)) return false;
             if (Directory.Exists(path)) Directory.Move(path, target);
             else File.Move(path, target);
+            MemoController.Store?.Renamed(path, target); // memos (and a folder's child memos) move with the name
             return true;
         }
         catch (Exception ex) { Error(ex); return false; }
