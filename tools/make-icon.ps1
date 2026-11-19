@@ -1,6 +1,6 @@
-# Draws the TabSeek icon (folder with tabs + magnifier) into src/TabSeek/TabSeek.ico
+# Draws the Tabseeker icon (folder with tabs + magnifier) into src/Tabseeker/Tabseeker.ico
 Add-Type -AssemblyName System.Drawing
-$out = Join-Path $PSScriptRoot '..\src\TabSeek\TabSeek.ico'
+$out = Join-Path $PSScriptRoot '..\src\Tabseeker\Tabseeker.ico'
 $sizes = 16, 24, 32, 48, 64, 256
 $pngs = foreach ($s in $sizes) {
     $bmp = New-Object System.Drawing.Bitmap $s, $s

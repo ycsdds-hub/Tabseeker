@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using Microsoft.Win32.SafeHandles;
 
-namespace TabSeek.Core;
+namespace Tabseeker.Core;
 
 /// <summary>A file or folder record from a volume's master file table.</summary>
 public readonly record struct TreeRecord(ulong Id, ulong ParentId, string Name, bool IsDirectory);

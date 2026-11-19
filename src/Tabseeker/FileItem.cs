@@ -1,8 +1,8 @@
 using System.IO;
 using System.Windows.Media;
-using TabSeek.Core;
+using Tabseeker.Core;
 
-namespace TabSeek;
+namespace Tabseeker;
 
 /// <summary>One row in a folder or search list. Size/date are read lazily, so virtualized search lists only stat visible rows.</summary>
 public sealed class FileItem

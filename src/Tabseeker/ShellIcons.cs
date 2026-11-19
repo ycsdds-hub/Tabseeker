@@ -5,7 +5,7 @@ using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
-namespace TabSeek;
+namespace Tabseeker;
 
 /// <summary>Small shell icons and type names, cached by extension (or by path for exe/lnk/ico).</summary>
 internal static class ShellIcons

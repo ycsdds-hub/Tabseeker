@@ -1,6 +1,6 @@
-using TabSeek.Core;
+using Tabseeker.Core;
 
-namespace TabSeek.Core.Tests;
+namespace Tabseeker.Core.Tests;
 
 public class SearchQueryTests
 {
@@ -30,7 +30,7 @@ public class SearchQueryTests
 
 public sealed class FileIndexTests : IDisposable
 {
-    private readonly string _root = Path.Combine(Path.GetTempPath(), "TabSeekTest_" + Guid.NewGuid().ToString("N"));
+    private readonly string _root = Path.Combine(Path.GetTempPath(), "TabseekerTest_" + Guid.NewGuid().ToString("N"));
 
     public FileIndexTests()
     {
@@ -52,7 +52,7 @@ public sealed class FileIndexTests : IDisposable
         Assert.Equal(7, ix.Count); // root + docs, 2026, src + 3 files
         Assert.Equal(new[] { Path.Combine(_root, "docs", "2026", "plan.docx") }, Find(ix, "plan"));
         Assert.Equal(2, Find(ix, "ext:pdf;cs").Count);
-        Assert.Equal(3, Find(ix, "folder: !TabSeekTest").Count);
+        Assert.Equal(3, Find(ix, "folder: !TabseekerTest").Count);
     }
 
     [Fact]

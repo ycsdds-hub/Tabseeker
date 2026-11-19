@@ -1,7 +1,7 @@
 using System.Globalization;
 using System.Runtime.InteropServices;
 
-namespace TabSeek.Core;
+namespace Tabseeker.Core;
 
 public static class Format
 {

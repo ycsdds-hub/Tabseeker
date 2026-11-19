@@ -3,9 +3,9 @@ using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using TabSeek.Core;
+using Tabseeker.Core;
 
-namespace TabSeek;
+namespace Tabseeker;
 
 /// <summary>A search tab: instant whole-disk filename search over the shared index.</summary>
 public partial class SearchView : UserControl

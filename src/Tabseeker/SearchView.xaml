@@ -1,4 +1,4 @@
-<UserControl x:Class="TabSeek.SearchView"
+<UserControl x:Class="Tabseeker.SearchView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              Background="White">

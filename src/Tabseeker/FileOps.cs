@@ -5,7 +5,7 @@ using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Interop;
 
-namespace TabSeek;
+namespace Tabseeker;
 
 internal static class FileOps
 {
@@ -91,7 +91,7 @@ internal static class FileOps
         };
         int rc = Native.SHFileOperation(ref op);
         if (rc != 0 && !op.fAnyOperationsAborted && rc != 0x4C7 /* cancelled */)
-            MessageBox.Show($"파일 작업 실패 (코드 0x{rc:X})", "TabSeek", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show($"파일 작업 실패 (코드 0x{rc:X})", "Tabseeker", MessageBoxButton.OK, MessageBoxImage.Warning);
     }
 
     public static bool Rename(string path, string newName)
@@ -149,5 +149,5 @@ internal static class FileOps
     }
 
     public static void Error(Exception ex) =>
-        MessageBox.Show(ex.Message, "TabSeek", MessageBoxButton.OK, MessageBoxImage.Warning);
+        MessageBox.Show(ex.Message, "Tabseeker", MessageBoxButton.OK, MessageBoxImage.Warning);
 }

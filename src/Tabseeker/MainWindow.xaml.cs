@@ -9,7 +9,7 @@ using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Threading;
 
-namespace TabSeek;
+namespace Tabseeker;
 
 public sealed class TabInfo : INotifyPropertyChanged
 {
@@ -123,7 +123,7 @@ public partial class MainWindow : Window, IShell
         _active = tab;
         tab.IsActive = true;
         Host.Content = tab.View;
-        Title = $"{tab.Title} — TabSeek";
+        Title = $"{tab.Title} — Tabseeker";
         if (tab.View is SearchView sv)
         {
             SetSearchBox(sv.Query);
@@ -162,7 +162,7 @@ public partial class MainWindow : Window, IShell
                 tab.ToolTip = sv.Query.Length == 0 ? "검색" : "검색: " + sv.Query;
                 break;
         }
-        if (tab == _active) Title = $"{tab.Title} — TabSeek";
+        if (tab == _active) Title = $"{tab.Title} — Tabseeker";
     }
 
     // IShell
@@ -355,7 +355,7 @@ public partial class MainWindow : Window, IShell
         var d = e.GetPosition(this) - _tabDragStart.Value;
         if (Math.Abs(d.X) < 8 && Math.Abs(d.Y) < 8) return;
         _tabDragStart = null;
-        var data = new DataObject("TabSeek.Tab", tab);
+        var data = new DataObject("Tabseeker.Tab", tab);
         if (tab.View is FolderView fv && fv.CurrentPath != FolderView.ThisPC) data.SetData(DataFormats.FileDrop, new[] { fv.CurrentPath });
         DragDrop.DoDragDrop((DependencyObject)sender, data, DragDropEffects.Move | DragDropEffects.Copy | DragDropEffects.Link);
     }
@@ -370,7 +370,7 @@ public partial class MainWindow : Window, IShell
     {
         var target = TabOf(sender);
         if (target == null) return;
-        if (e.Data.GetData("TabSeek.Tab") is TabInfo dragged)
+        if (e.Data.GetData("Tabseeker.Tab") is TabInfo dragged)
         {
             e.Effects = DragDropEffects.Move;
             int from = _tabs.IndexOf(dragged), to = _tabs.IndexOf(target);
@@ -387,7 +387,7 @@ public partial class MainWindow : Window, IShell
     private void Tab_Drop(object sender, DragEventArgs e)
     {
         // files dropped on a folder tab are copied/moved into that folder (QTTabBar behaviour)
-        if (e.Data.GetDataPresent("TabSeek.Tab")) { e.Handled = true; return; }
+        if (e.Data.GetDataPresent("Tabseeker.Tab")) { e.Handled = true; return; }
         if (TabOf(sender)?.View is FolderView fv && fv.CurrentPath != FolderView.ThisPC && e.Data.GetData(DataFormats.FileDrop) is string[] files)
         {
             FileOps.Transfer(files, fv.CurrentPath, ListHelpers.DropEffect(e, fv.CurrentPath) == DragDropEffects.Move);
@@ -522,8 +522,8 @@ F2 이름 바꾸기 · Delete 휴지통 · Ctrl+C/X/V · Ctrl+Shift+C 경로 복
         "단축키 / 검색 문법", MessageBoxButton.OK, MessageBoxImage.Information);
 
     private void About_Click(object sender, RoutedEventArgs e) => MessageBox.Show(this,
-        $"TabSeek {typeof(MainWindow).Assembly.GetName().Version?.ToString(3)}\n탭 탐색기 + 전체 드라이브 즉시 검색\n\n설정/색인 위치: {AppSettings.Dir}",
-        "TabSeek 정보", MessageBoxButton.OK, MessageBoxImage.Information);
+        $"Tabseeker {typeof(MainWindow).Assembly.GetName().Version?.ToString(3)}\n탭 탐색기 + 전체 드라이브 즉시 검색\n\n설정/색인 위치: {AppSettings.Dir}",
+        "Tabseeker 정보", MessageBoxButton.OK, MessageBoxImage.Information);
 
     // ------------------------------------------------------------ window lifetime
 
@@ -566,7 +566,7 @@ F2 이름 바꾸기 · Delete 휴지통 · Ctrl+C/X/V · Ctrl+Shift+C 경로 복
     private void Window_SourceInitialized(object? sender, EventArgs e)
     {
         var handle = new WindowInteropHelper(this).Handle;
-        // Ctrl+Alt+F: bring TabSeek forward and focus the search box from anywhere
+        // Ctrl+Alt+F: bring Tabseeker forward and focus the search box from anywhere
         Native.RegisterHotKey(handle, HotkeyId, Native.MOD_CONTROL | Native.MOD_ALT | Native.MOD_NOREPEAT, (uint)KeyInterop.VirtualKeyFromKey(Key.F));
         HwndSource.FromHwnd(handle)?.AddHook((IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled) =>
         {

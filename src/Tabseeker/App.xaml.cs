@@ -2,7 +2,7 @@ using System.IO;
 using System.Windows;
 using System.Windows.Threading;
 
-namespace TabSeek;
+namespace Tabseeker;
 
 public partial class App : Application
 {
@@ -29,7 +29,7 @@ public partial class App : Application
             File.AppendAllText(Path.Combine(AppSettings.Dir, "error.log"), $"[{DateTime.Now:s}] {e.Exception}\n\n");
         }
         catch { }
-        MessageBox.Show(e.Exception.Message, "TabSeek 오류", MessageBoxButton.OK, MessageBoxImage.Warning);
+        MessageBox.Show(e.Exception.Message, "Tabseeker 오류", MessageBoxButton.OK, MessageBoxImage.Warning);
         e.Handled = true;
     }
 }

@@ -1,9 +1,9 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.IO;
-using TabSeek.Core;
+using Tabseeker.Core;
 
-namespace TabSeek;
+namespace Tabseeker;
 
 /// <summary>
 /// Owns the global file index: loads the cache at startup, rebuilds it in the background,
@@ -97,7 +97,7 @@ public sealed class IndexService : IDisposable
         FileIndex.Build(roots, progress, ct, root =>
             MftReader.CanRead(root) ? (MftReader.RootRecord, MftReader.Read(root, ct)) : null);
 
-    /// <summary>Entry point of the elevated helper: <c>TabSeek.exe --build-index &lt;file&gt;</c>.</summary>
+    /// <summary>Entry point of the elevated helper: <c>Tabseeker.exe --build-index &lt;file&gt;</c>.</summary>
     public static int BuildIndexFile(string path)
     {
         try

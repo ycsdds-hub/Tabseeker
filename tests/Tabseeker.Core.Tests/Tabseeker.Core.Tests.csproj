@@ -21,7 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\TabSeek.Core\TabSeek.Core.csproj" />
+    <ProjectReference Include="..\..\src\Tabseeker.Core\Tabseeker.Core.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,6 +1,6 @@
 using System.Runtime.InteropServices;
 
-namespace TabSeek;
+namespace Tabseeker;
 
 internal static class Native
 {

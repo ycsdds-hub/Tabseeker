@@ -1,7 +1,7 @@
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace TabSeek.Core;
+namespace Tabseeker.Core;
 
 /// <summary>Lazily computed full path for the entry being matched; reused across entries to avoid allocations.</summary>
 public sealed class PathCache

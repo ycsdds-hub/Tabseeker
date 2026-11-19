@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Tabseeker.Core/Tabseeker.Core.csproj" />
+    <Project Path="src/Tabseeker/Tabseeker.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Tabseeker.Core.Tests/Tabseeker.Core.Tests.csproj" />
+  </Folder>
+</Solution>

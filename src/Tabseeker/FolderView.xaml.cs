@@ -4,9 +4,9 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
-using TabSeek.Core;
+using Tabseeker.Core;
 
-namespace TabSeek;
+namespace Tabseeker;
 
 /// <summary>One folder tab: a file list with history, breadcrumb, filter and live refresh.</summary>
 public partial class FolderView : UserControl

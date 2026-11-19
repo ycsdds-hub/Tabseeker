@@ -1,11 +1,11 @@
 using System.IO;
 using System.Text.Json;
 
-namespace TabSeek;
+namespace Tabseeker;
 
 public sealed class AppSettings
 {
-    public static string Dir => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "TabSeek");
+    public static string Dir => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Tabseeker");
     private static string FilePath => Path.Combine(Dir, "settings.json");
 
     public List<string> Tabs { get; set; } = new();

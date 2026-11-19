@@ -2,7 +2,7 @@ using System.Collections.Concurrent;
 using System.IO.Enumeration;
 using System.Text;
 
-namespace TabSeek.Core;
+namespace Tabseeker.Core;
 
 /// <summary>
 /// In-memory index of every file and folder name under a set of roots (Everything-style).
@@ -357,7 +357,7 @@ public sealed class FileIndex
     public static FileIndex Load(Stream stream)
     {
         using var r = new BinaryReader(stream, Encoding.UTF8, leaveOpen: true);
-        if (r.ReadInt32() != FileMagic || r.ReadInt32() != FileVersion) throw new InvalidDataException("Not a TabSeek index file.");
+        if (r.ReadInt32() != FileMagic || r.ReadInt32() != FileVersion) throw new InvalidDataException("Not a Tabseeker index file.");
         var index = new FileIndex();
         int rootCount = r.ReadInt32();
         var roots = new List<string>(rootCount);
