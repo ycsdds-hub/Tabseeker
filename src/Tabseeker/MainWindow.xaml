@@ -71,7 +71,8 @@
                     <TextBlock Text="&#xE721;" FontFamily="Segoe MDL2 Assets" Foreground="{StaticResource Muted}" FontSize="12"
                                VerticalAlignment="Center" Margin="9,0,0,0" IsHitTestVisible="False"/>
                 </Grid>
-                <Button x:Name="MenuBtn" Style="{StaticResource ToolButton}" Content="&#xE713;" ToolTip="설정" Click="MenuBtn_Click" Margin="4,0,0,0">
+                <Button x:Name="HelpBtn" Style="{StaticResource ToolButton}" Content="&#xE897;" ToolTip="도움말 (F1)" Click="Help_Click" Margin="4,0,0,0"/>
+                <Button x:Name="MenuBtn" Style="{StaticResource ToolButton}" Content="&#xE713;" ToolTip="설정" Click="MenuBtn_Click" Margin="0">
                     <Button.ContextMenu>
                         <ContextMenu>
                             <MenuItem x:Name="HiddenItem" Header="숨김 파일 표시" IsCheckable="True" Click="Hidden_Click"/>
@@ -82,7 +83,8 @@
                             <Separator/>
                             <MenuItem Header="탐색기 우클릭 메뉴 정리…" Click="ShellMenu_Click"/>
                             <Separator/>
-                            <MenuItem Header="단축키 / 검색 문법" Click="Help_Click"/>
+                            <MenuItem Header="도움말" InputGestureText="F1" Click="Help_Click"/>
+                            <MenuItem Header="단축키 모음" Tag="Keys" Click="Help_Click"/>
                             <MenuItem Header="Tabseeker 정보" Click="About_Click"/>
                         </ContextMenu>
                     </Button.ContextMenu>

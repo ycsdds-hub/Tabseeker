@@ -486,6 +486,7 @@ public partial class MainWindow : Window, IShell
         else if (ctrl && (key == Key.E || key == Key.K)) FocusSearch();
         else if (ctrlShift && key == Key.F) { AddSearchTab("", true); FocusSearch(); }
         else if (ctrl && key == Key.D) { if (_active?.View is FolderView fv) AddFavorite(fv.CurrentPath); }
+        else if (mods == ModifierKeys.None && key == Key.F1) HelpWindow.ShowFor(this);
         else return;
         e.Handled = true;
     }
@@ -531,29 +532,8 @@ public partial class MainWindow : Window, IShell
         SearchBox.CaretIndex = SearchBox.Text.Length;
     }
 
-    private void Help_Click(object sender, RoutedEventArgs e) => MessageBox.Show(this,
-@"[탭]
-Ctrl+T 새 탭 · Ctrl+W 닫기 · Ctrl+Shift+T 닫은 탭 다시 열기
-Ctrl+Tab / Ctrl+1~9 탭 이동 · 탭 더블클릭 = 복제 · 탭 가운데 클릭 = 닫기
-탭을 끌어서 순서 변경 · 파일을 탭에 끌어 놓으면 그 폴더로 복사/이동
-폴더 가운데 클릭 / Ctrl+Enter = 새 탭에서 열기
-
-[폴더]
-Alt+←/→ 뒤로/앞으로 · Backspace·Alt+↑ 위로 · 빈 곳 더블클릭 = 위로
-Ctrl+L 경로 입력 · Ctrl+F 이 폴더 거르기 · F5 새로 고침 · Ctrl+D 즐겨찾기
-F2 이름 바꾸기 · Delete 휴지통 · Ctrl+C/X/V · Ctrl+Shift+C 경로 복사 · Ctrl+Shift+N 새 폴더
-
-[검색]  Ctrl+E (창 안) · Ctrl+Alt+F (어디서나)
-단어 여러 개 = AND   a|b = OR   !단어 = 제외   ""띄어 쓴 말""
-*.pdf  보고?  = 와일드카드      ext:pdf;hwp  file:  folder:
-폴더\이름 = 경로로 찾기      regex:^IMG_\d+
-결과 Enter = 열기 · Ctrl+Enter = 들어있는 폴더를 새 탭으로
-
-[메모]
-이름 위에 마우스를 잠시 올리면 이름 옆에 메모 말풍선이 뜸 — 바로 입력, 자동 저장
-Ctrl+M = 선택한 항목 메모 쓰기 · 오른쪽 아래 모서리를 끌어 크기 조절 · Esc 닫기
-메모가 있는 이름 옆에는 노트 표시 · 검색창에 memo: 단어 = 메모 내용으로 찾기",
-        "단축키 / 검색 문법", MessageBoxButton.OK, MessageBoxImage.Information);
+    /// <summary>F1, the ? button and ⚙ ▸ 도움말: the help window (one page per feature, table of contents, shortcuts).</summary>
+    private void Help_Click(object sender, RoutedEventArgs e) => HelpWindow.ShowFor(this, (sender as FrameworkElement)?.Tag as string);
 
     private void About_Click(object sender, RoutedEventArgs e) => MessageBox.Show(this,
         $"Tabseeker {typeof(MainWindow).Assembly.GetName().Version?.ToString(3)}\n탭 탐색기 + 전체 드라이브 즉시 검색\n\n설정/색인 위치: {AppSettings.Dir}",
