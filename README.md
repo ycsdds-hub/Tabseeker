@@ -1,4 +1,4 @@
-# Tabseeker
+﻿# Tabseeker
 
 탭 탐색기(QTTabBar 같은)와 전체 드라이브 즉시 검색(Everything 같은)을 한 창에 합친 Windows 파일 탐색 도구.
 
@@ -40,7 +40,7 @@
 - Windows 탐색기에서 파일·폴더·빈 곳·드라이브를 오른쪽 클릭 ▸ '더 많은 옵션 표시'에 나오는 프로그램 항목(PyCharm, VLC, Git Bash, IrfanView, Winamp …)을 골라 **`앱 메뉴 모음 ▸`** 하위 메뉴 하나로 옮김. 마우스를 올리면 펼쳐져서 고를 수 있고, 기능은 그대로
 - 7-Zip·알집·알씨·Acrobat 같은 **확장 프로그램 방식** 항목은 프로그램이 메뉴를 직접 그려서 Windows 구조상 하위 메뉴로 옮길 수 없음 → 안 쓰는 것만 골라 숨기기 가능 (기본은 숨기지 않음)
 - Windows 자체 항목(열기, 바로 가기에 고정, BitLocker 등)은 목록에 나오지 않고 건드리지 않음
-- 현재 사용자 레지스트리(`HKCU\Software\Classes`)에만 쓰며 관리자 권한 불필요. 바꾼 내용은 `%LOCALAPPDATA%\Tabseeker\shellmenu-undo.json` 에 기록되어 **원래대로 되돌리기**로 정확히 복원
+- 현재 사용자 레지스트리에만 씀(관리자 권한 불필요): 묶기는 `HKCU\Software\Classes`, 숨기기는 Windows의 사용자별 '차단된 셸 확장' 목록(`HKCU\...\Shell Extensions\Blocked`). 바꾼 내용은 `%LOCALAPPDATA%\Tabseeker\shellmenu-undo.json` 에 기록되어 **원래대로 되돌리기**로 정확히 복원
 
 ## 사용법
 
@@ -106,6 +106,7 @@ UI 스모크 테스트 (앱을 직접 띄우고 닫음): `powershell -File tests
 
 ## 변경 기록
 
+- Tabseeker 1.2.1 (2026-11-21): 우클릭 메뉴 '숨기기'를 Windows의 사용자별 '차단된 셸 확장' 목록으로 처리 (이름이 ID로 된 Ashampoo 같은 확장도 숨겨짐), 항목 이름을 설치 폴더 이름으로 표시
 - Tabseeker 1.2.0 (2026-11-21): 타일 보기(미리보기), 왼쪽 폴더 트리, 메모 파란 점, 말풍선에 Windows 설명 따로 표시, 탐색기 우클릭 메뉴 정리(적용/되돌리기)
 - Tabseeker 1.1.0 (2026-11-20): 호버 메모 말풍선, 암호화된 메모 데이터베이스, `memo:` 검색
 - Tabseeker 1.0.0 (2026-11-20): TabSeek 1.0.0에서 이름을 Tabseeker로 바꿔 새로 시작 (실행 파일, 프로젝트, 네임스페이스, 설정 폴더)

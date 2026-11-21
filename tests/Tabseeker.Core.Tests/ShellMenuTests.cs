@@ -13,6 +13,7 @@ public sealed class ShellMenuTests : IDisposable
     private readonly RegistryKey _root;
     private readonly RegistryKey _read;   // plays HKEY_CLASSES_ROOT
     private readonly RegistryKey _write;  // plays HKCU\Software\Classes
+    private readonly RegistryKey _blocked; // plays HKCU\...\Shell Extensions\Blocked
     private readonly string _manifest = Path.Combine(Path.GetTempPath(), "tsk_shellmenu_" + Guid.NewGuid().ToString("N") + ".json");
 
     public ShellMenuTests()
@@ -20,6 +21,7 @@ public sealed class ShellMenuTests : IDisposable
         _root = Registry.CurrentUser.CreateSubKey(_rootName);
         _read = _root.CreateSubKey("read");
         _write = _root.CreateSubKey("write");
+        _blocked = _root.CreateSubKey("blocked");
 
         Verb("*", "Notepad++", "Edit with Notepad++", @"""C:\Program Files\Notepad++\notepad++.exe"" ""%1""");
         Verb("*", "Grammarly", "Import to Grammarly", @"C:\Apps\grammarly.exe ""%1""");
@@ -30,11 +32,14 @@ public sealed class ShellMenuTests : IDisposable
 
         Handler("*", "7-Zip", "{23170F69-40C1-278A-1000-000100020000}", "7-Zip Shell Extension", @"C:\Program Files\7-Zip\7-zip.dll");
         Handler("*", "Open With", "{09799AFB-AD67-11d1-ABCD-00C04FC30936}", null, @"C:\Windows\System32\shell32.dll");
+        // a handler whose key is named by its CLSID with an empty value (like Ashampoo's)
+        Handler("*", "{595F4AF2-DEAA-427D-8F93-C9790265967E}", "", "UIContextHandler", @"C:\Apps\Ashampoo\UIContextHandler64.dll");
+        Handler("Folder", "{595F4AF2-DEAA-427D-8F93-C9790265967E}", "", "UIContextHandler", @"C:\Apps\Ashampoo\UIContextHandler64.dll");
     }
 
     public void Dispose()
     {
-        _read.Dispose(); _write.Dispose(); _root.Dispose();
+        _read.Dispose(); _write.Dispose(); _blocked.Dispose(); _root.Dispose();
         Registry.CurrentUser.DeleteSubKeyTree(_rootName, false);
         File.Delete(_manifest);
     }
@@ -50,13 +55,16 @@ public sealed class ShellMenuTests : IDisposable
     private void Handler(string cls, string name, string clsid, string? title, string dll)
     {
         using (var h = _read.CreateSubKey($@"{cls}\shellex\ContextMenuHandlers\{name}")) h.SetValue("", clsid);
+        if (clsid.Length == 0) clsid = name;
         using var c = _read.CreateSubKey($@"CLSID\{clsid}");
         if (title != null) c.SetValue("", title);
         using var s = c.CreateSubKey("InprocServer32");
         s.SetValue("", dll);
     }
 
-    private ShellMenuOrganizer New() => new(_read, _write, _manifest);
+    private ShellMenuOrganizer New() => new(_read, _write, _blocked, _manifest);
+
+    private bool Blocked(string clsid) => _blocked.GetValue(clsid) != null;
 
     /// <summary>Emulates HKCR's merge: our HKCU-side values win over the machine-side ones.</summary>
     private object? Merged(string path, string value)
@@ -76,7 +84,8 @@ public sealed class ShellMenuTests : IDisposable
         Assert.Contains(items, e => e.Name == "git_shell" && !e.IsSystem && e.Label == "Open Git Bash here");
         Assert.Contains(items, e => e.Name == "pintohomefile" && e.IsSystem);
         Assert.DoesNotContain(items, e => e.Name == "cmd");                       // Shift-only items are left out
-        Assert.Contains(items, e => e.Name == "7-Zip" && e.IsHandler && !e.IsSystem && e.Label == "7-Zip Shell Extension");
+        // product name of the DLL when it exists ("7-Zip"), otherwise the class title
+        Assert.Contains(items, e => e.Name == "7-Zip" && e.IsHandler && !e.IsSystem && e.Label.StartsWith("7-Zip"));
         Assert.Contains(items, e => e.Name == "Open With" && e.IsHandler && e.IsSystem);
     }
 
@@ -98,7 +107,9 @@ public sealed class ShellMenuTests : IDisposable
             Assert.Equal("{dummy}", dt.GetValue("CLSID"));                       // sub-keys copied too
         Assert.Equal("", Merged(@"*\shell\Notepad++", "LegacyDisable"));           // original hidden
         Assert.Null(Merged(@"*\shell\pintohomefile", "LegacyDisable"));            // Windows item untouched
-        Assert.Equal("-{23170F69-40C1-278A-1000-000100020000}", Merged(@"*\shellex\ContextMenuHandlers\7-Zip", ""));
+        Assert.True(Blocked("{23170F69-40C1-278A-1000-000100020000}"));            // 7-Zip blocked for this user
+        Assert.False(Blocked("{595F4AF2-DEAA-427D-8F93-C9790265967E}"));           // not selected
+        Assert.Null(_write.OpenSubKey(@"*\shellex\ContextMenuHandlers\7-Zip"));     // handler keys themselves untouched
         Assert.True(org.IsApplied);
 
         // the machine-side ("read") keys were never written
@@ -142,6 +153,32 @@ public sealed class ShellMenuTests : IDisposable
         Assert.Null(_write.OpenSubKey($@"*\shell\{ShellMenuOrganizer.GroupKey}"));
         Assert.Null(_write.OpenSubKey(@"*\shell\Notepad++"));
         Assert.Null(_write.OpenSubKey(@"*\shellex\ContextMenuHandlers\7-Zip"));
+    }
+
+    [Fact]
+    public void ClsidNamedHandlerIsBlockedOnceAndUndone()
+    {
+        var org = New();
+        var items = org.Scan();
+        var ash = items.Where(e => e.Name.StartsWith("{595F4AF2")).ToList();
+        Assert.Equal(2, ash.Count);                                                  // files + folders
+        Assert.All(ash, e => Assert.False(e.IsSystem));
+        // a value someone else already put in the blocked list must survive our undo
+        _blocked.SetValue("{11111111-2222-3333-4444-555555555555}", "other tool");
+        org.Apply(Array.Empty<ShellMenuEntry>(), ash, null);
+        Assert.True(Blocked("{595F4AF2-DEAA-427D-8F93-C9790265967E}"));
+        Assert.Single(org.LoadManifest()!.Ops);                                     // one blocked-list value for both places
+        Assert.Contains(New().Scan(), e => e.Name.StartsWith("{595F4AF2") && e.ByTabseeker);
+        org.Undo();
+        Assert.False(Blocked("{595F4AF2-DEAA-427D-8F93-C9790265967E}"));
+        Assert.True(Blocked("{11111111-2222-3333-4444-555555555555}"));
+    }
+
+    [Fact]
+    public void HandlerBlockedBySomeoneElseIsNotListed()
+    {
+        _blocked.SetValue("{23170F69-40C1-278A-1000-000100020000}", "other tool");
+        Assert.DoesNotContain(New().Scan(), e => e.Name == "7-Zip");
     }
 
     [Fact]

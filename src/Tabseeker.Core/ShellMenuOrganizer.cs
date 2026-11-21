@@ -66,20 +66,28 @@ public sealed class ShellMenuOrganizer
         "Offline Files", "WorkFolders", "EnhancedStorageShell", "New", "CopyAsPathMenu", "PintoStartScreen", "EPP", "FileSyncEx",
     };
 
-    private readonly RegistryKey _read;   // merged view (HKEY_CLASSES_ROOT) — or a test key
-    private readonly RegistryKey _write;  // HKCU\Software\Classes — or a test key
+    private readonly RegistryKey _read;     // merged view (HKEY_CLASSES_ROOT) — or a test key
+    private readonly RegistryKey _write;    // HKCU\Software\Classes — or a test key
+    private readonly RegistryKey _blocked;  // HKCU\...\Shell Extensions\Blocked — or a test key
     private readonly string _manifestPath;
 
-    public ShellMenuOrganizer(RegistryKey read, RegistryKey write, string manifestPath)
+    public ShellMenuOrganizer(RegistryKey read, RegistryKey write, RegistryKey blocked, string manifestPath)
     {
         _read = read;
         _write = write;
+        _blocked = blocked;
         _manifestPath = manifestPath;
     }
 
-    /// <summary>The real thing: HKCR read, HKCU\Software\Classes write.</summary>
+    /// <summary>
+    /// The real thing: HKCR read, HKCU\Software\Classes write (submenu), and the current user's
+    /// "blocked shell extensions" list for hiding extensions (Windows' own per-user switch; works for every handler).
+    /// </summary>
     public static ShellMenuOrganizer ForCurrentUser(string appDataDir) =>
-        new(Registry.ClassesRoot, Registry.CurrentUser.CreateSubKey(@"Software\Classes"), Path.Combine(appDataDir, "shellmenu-undo.json"));
+        new(Registry.ClassesRoot,
+            Registry.CurrentUser.CreateSubKey(@"Software\Classes"),
+            Registry.CurrentUser.CreateSubKey(@"Software\Microsoft\Windows\CurrentVersion\Shell Extensions\Blocked"),
+            Path.Combine(appDataDir, "shellmenu-undo.json"));
 
     public bool IsApplied => File.Exists(_manifestPath);
 
@@ -133,8 +141,10 @@ public sealed class ShellMenuOrganizer
                 else if (clsid != null && clsid.StartsWith('-')) continue; // disabled by someone else
                 if (string.IsNullOrWhiteSpace(clsid)) clsid = name;
                 if (!clsid.StartsWith('{')) continue;
+                if (!ours && _blocked.GetValue(clsid) != null) continue;     // already blocked by someone else
                 var (title, dll) = DescribeClsid(clsid);
-                string label = title ?? (name.StartsWith('{') ? "" : name);
+                // the DLL's product name ("7-Zip", "Ashampoo UnInstaller 16") reads better than class names like "UIContextHandler"
+                string label = ProductName(dll) ?? title ?? (name.StartsWith('{') ? "" : name);
                 if (label.Length == 0) label = Path.GetFileNameWithoutExtension(dll) is { Length: > 0 } f ? f : clsid;
                 bool system = SystemHandlers.Contains(name) || IsWindowsPath(dll) || dll.Length == 0;
                 list.Add(new ShellMenuEntry
@@ -154,6 +164,34 @@ public sealed class ShellMenuOrganizer
         using var server = key?.OpenSubKey("InprocServer32");
         var dll = Environment.ExpandEnvironmentVariables(server?.GetValue("") as string ?? "");
         return (string.IsNullOrWhiteSpace(title) ? null : title, dll);
+    }
+
+    /// <summary>
+    /// A readable name for an extension DLL: the app's install folder when it sits right under Program Files
+    /// ("7-Zip", "Bandizip", "Ashampoo UnInstaller 16" — DLL product names can be shared or cryptic), else its product name.
+    /// </summary>
+    private static string? ProductName(string dll)
+    {
+        try
+        {
+            if (dll.Length == 0) return null;
+            // folders under Program Files: "7-Zip\x.dll" → 7-Zip, "Ashampoo\Ashampoo UnInstaller 10\x.dll" → the product folder,
+            // "ESTsoft\ALZip\x.dll" → ALZip; version folders ("26.204.1019") and Common Files fall back to the product name
+            var parts = (Path.GetDirectoryName(dll) ?? "").Split('\\', StringSplitOptions.RemoveEmptyEntries);
+            int pf = Array.FindIndex(parts, p => p.StartsWith("Program Files", StringComparison.OrdinalIgnoreCase) || p.StartsWith("PROGRA~", StringComparison.OrdinalIgnoreCase));
+            if (pf >= 0 && pf + 1 < parts.Length && !parts[pf + 1].Equals("Common Files", StringComparison.OrdinalIgnoreCase))
+            {
+                var vendor = parts[pf + 1];
+                if (pf + 2 >= parts.Length) return vendor;
+                var product = parts[pf + 2];
+                bool technical = char.IsDigit(product[0]) || product is "WinUI3Apps" or "bin" or "x64" or "x86" or "lib" or "modules";
+                return technical ? vendor : product;
+            }
+            if (!File.Exists(dll)) return null;
+            var name = System.Diagnostics.FileVersionInfo.GetVersionInfo(dll).ProductName?.Trim();
+            return string.IsNullOrEmpty(name) ? null : name;
+        }
+        catch { return null; }
     }
 
     private static bool IsWindowsResource(string label) =>
@@ -205,6 +243,7 @@ public sealed class ShellMenuOrganizer
                     m.Grouped.Add(new EntryRef { Class = e.Class, Name = e.Name });
                 }
             }
+            var blockedDone = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             foreach (var e in hide.Where(e => e.IsHandler))
             {
                 var path = $"{e.Class}\\shellex\\ContextMenuHandlers\\{e.Name}";
@@ -212,7 +251,14 @@ public sealed class ShellMenuOrganizer
                 var clsid = src?.GetValue("") as string;
                 if (string.IsNullOrWhiteSpace(clsid)) clsid = e.Name;
                 if (!clsid.StartsWith('{')) continue;
-                SetValue(m, path, "", "-" + clsid);   // a CLSID Windows cannot parse: the handler is skipped
+                // Windows' per-user "blocked shell extensions" list: Explorer skips the extension everywhere.
+                // (Changing the handler key's value does not work for keys named by their CLSID.)
+                if (blockedDone.Add(clsid))
+                {
+                    var old = _blocked.GetValue(clsid);
+                    m.Ops.Add(new Op { Kind = "SetValue", Root = "blocked", Path = "", Name = clsid, HadOld = old != null, Old = old?.ToString() });
+                    _blocked.SetValue(clsid, $"{e.Label} (Tabseeker 우클릭 메뉴 정리)");
+                }
                 m.Hidden.Add(new EntryRef { Class = e.Class, Name = e.Name, Original = clsid });
             }
         }
@@ -233,6 +279,11 @@ public sealed class ShellMenuOrganizer
             try
             {
                 if (op.Kind == "CreatedKey") _write.DeleteSubKeyTree(op.Path, throwOnMissingSubKey: false);
+                else if (op.Kind == "SetValue" && op.Root == "blocked")
+                {
+                    if (op.HadOld) _blocked.SetValue(op.Name, op.Old ?? "");
+                    else _blocked.DeleteValue(op.Name, throwOnMissingValue: false);
+                }
                 else if (op.Kind == "SetValue")
                 {
                     using var k = _write.OpenSubKey(op.Path, writable: true);
@@ -293,6 +344,8 @@ public sealed class ShellMenuOrganizer
     public sealed class Op
     {
         public string Kind { get; set; } = "";
+        /// <summary>"classes" (HKCU\Software\Classes, default) or "blocked" (the per-user blocked-extensions list).</summary>
+        public string Root { get; set; } = "classes";
         public string Path { get; set; } = "";
         public string Name { get; set; } = "";
         public bool HadOld { get; set; }
