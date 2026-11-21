@@ -80,6 +80,8 @@
                             <MenuItem Header="메모 모아 보기 (memo:)" Click="MemoList_Click"/>
                             <MenuItem x:Name="MemoEmptyItem" Header="메모 없는 이름에도 호버 말풍선" IsCheckable="True" Click="MemoEmpty_Click"/>
                             <Separator/>
+                            <MenuItem Header="탐색기 우클릭 메뉴 정리…" Click="ShellMenu_Click"/>
+                            <Separator/>
                             <MenuItem Header="단축키 / 검색 문법" Click="Help_Click"/>
                             <MenuItem Header="Tabseeker 정보" Click="About_Click"/>
                         </ContextMenu>

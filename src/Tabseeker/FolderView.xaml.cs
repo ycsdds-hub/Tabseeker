@@ -38,7 +38,44 @@ public partial class FolderView : UserControl
         ListHelpers.EnableDragOut(List);
         shell.Memos.Attach(List);
         PreviewKeyDown += View_PreviewKeyDown;
+        ApplyViewMode();
         Navigate(path, record: false, selectName: selectName);
+    }
+
+    // ------------------------------------------------------------ list / tile
+
+    /// <summary>Switches between the detail list (virtualized GridView) and tiles (big icons / thumbnails, wrapping).</summary>
+    public void ApplyViewMode()
+    {
+        bool tile = _shell.TileView;
+        if (tile)
+        {
+            List.View = null;
+            List.ItemTemplate = (DataTemplate)FindResource("TileItem");
+            List.ItemContainerStyle = (Style)FindResource("TileContainer");
+            List.ItemsPanel = (ItemsPanelTemplate)FindResource("TilePanel");
+            ScrollViewer.SetHorizontalScrollBarVisibility(List, ScrollBarVisibility.Disabled);
+        }
+        else
+        {
+            List.ItemTemplate = null;
+            List.ItemContainerStyle = null;
+            List.ItemsPanel = (ItemsPanelTemplate)FindResource("ListPanel");
+            List.View = Grid;
+            ScrollViewer.SetHorizontalScrollBarVisibility(List, ScrollBarVisibility.Auto);
+        }
+        ListModeBtn.Background = tile ? Brushes.Transparent : (Brush)FindResource("AccentSoft");
+        TileModeBtn.Background = tile ? (Brush)FindResource("AccentSoft") : Brushes.Transparent;
+    }
+
+    private void ListMode_Click(object sender, RoutedEventArgs e) => _shell.TileView = false;
+    private void TileMode_Click(object sender, RoutedEventArgs e) => _shell.TileView = true;
+
+    private void SortBy(string key)
+    {
+        _sortDesc = key == _sortKey ? !_sortDesc : key is "Modified" or "Size";
+        _sortKey = key;
+        Apply();
     }
 
     // ------------------------------------------------------------ navigation
@@ -90,6 +127,7 @@ public partial class FolderView : UserControl
     private void Load(string? selectName, bool keepScroll)
     {
         int version = ++_loadVersion;
+        if (!keepScroll) ShellThumbnails.NewGeneration(); // new folder: drop thumbnails still queued for the old one
         var path = CurrentPath;
         bool showHidden = _shell.ShowHidden;
         var previous = keepScroll ? ListHelpers.Selected(List).Select(i => i.FullPath).ToHashSet(StringComparer.OrdinalIgnoreCase) : null;
@@ -302,6 +340,8 @@ public partial class FolderView : UserControl
         else if (mods == ModifierKeys.Alt && key == Key.Up) { GoUp(); e.Handled = true; }
         else if (mods == ModifierKeys.Control && key == Key.L) { EditAddress(); e.Handled = true; }
         else if (mods == ModifierKeys.Control && key == Key.F) { FocusFilter(); e.Handled = true; }
+        else if (mods == (ModifierKeys.Control | ModifierKeys.Shift) && key is Key.D1 or Key.NumPad1) { _shell.TileView = false; e.Handled = true; }
+        else if (mods == (ModifierKeys.Control | ModifierKeys.Shift) && key is Key.D2 or Key.NumPad2) { _shell.TileView = true; e.Handled = true; }
         else if (key == Key.F5) { Refresh(); e.Handled = true; }
     }
 
@@ -379,6 +419,21 @@ public partial class FolderView : UserControl
         else
         {
             menu.Items.Add(ListHelpers.Item("새로 고침", Refresh, "F5"));
+            var view = new MenuItem { Header = "보기" };
+            view.Items.Add(new MenuItem { Header = "목록", IsCheckable = true, IsChecked = !_shell.TileView, InputGestureText = "Ctrl+Shift+1" });
+            view.Items.Add(new MenuItem { Header = "타일", IsCheckable = true, IsChecked = _shell.TileView, InputGestureText = "Ctrl+Shift+2" });
+            ((MenuItem)view.Items[0]).Click += (_, _) => _shell.TileView = false;
+            ((MenuItem)view.Items[1]).Click += (_, _) => _shell.TileView = true;
+            menu.Items.Add(view);
+            var sort = new MenuItem { Header = "정렬 기준" };
+            foreach (var (label, key) in new[] { ("이름", "Name"), ("수정한 날짜", "Modified"), ("유형", "Type"), ("크기", "Size") })
+            {
+                var mi = new MenuItem { Header = label + (key == _sortKey ? (_sortDesc ? "  ▼" : "  ▲") : "") };
+                mi.Click += (_, _) => SortBy(key);
+                sort.Items.Add(mi);
+            }
+            menu.Items.Add(sort);
+            menu.Items.Add(new Separator());
             menu.Items.Add(ListHelpers.Item("새 폴더", NewFolder, "Ctrl+Shift+N", !pc));
             menu.Items.Add(ListHelpers.Item("붙여넣기", Paste, "Ctrl+V", !pc && Clipboard.ContainsFileDropList()));
             menu.Items.Add(new Separator());

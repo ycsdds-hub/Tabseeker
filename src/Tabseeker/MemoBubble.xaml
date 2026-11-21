@@ -32,6 +32,11 @@
                     <Image x:Name="ItemIcon" Width="16" Height="16" Margin="0,0,6,0" VerticalAlignment="Center"/>
                     <TextBlock x:Name="ItemName" FontWeight="SemiBold" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Foreground="#5B4A0E"/>
                 </DockPanel>
+                <!-- the file's own Windows description (shortcut "설명", document comments): read-only, not a Tabseeker memo -->
+                <Border x:Name="WinCommentBox" DockPanel.Dock="Top" Background="#F3EBC4" CornerRadius="4" Padding="6,3" Margin="0,0,6,5" Visibility="Collapsed"
+                        ToolTip="파일 자체에 들어 있는 Windows 설명입니다. 프로그램 설치나 문서 작성 때 들어간 내용이며 Tabseeker 메모와는 별개입니다.">
+                    <TextBlock x:Name="WinComment" FontSize="11.5" Foreground="#7A6A30" TextWrapping="Wrap" MaxHeight="34" TextTrimming="CharacterEllipsis"/>
+                </Border>
                 <!-- footer: status + resize grip -->
                 <DockPanel DockPanel.Dock="Bottom" Margin="0,2,0,0">
                     <Thumb x:Name="Grip" DockPanel.Dock="Right" Width="14" Height="14" Cursor="SizeNWSE" DragDelta="Grip_DragDelta"

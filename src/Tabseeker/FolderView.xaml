@@ -16,6 +16,9 @@
                     <Button x:Name="FwdBtn" Style="{StaticResource ToolButton}" Content="&#xE72A;" ToolTip="앞으로 (Alt+→)" Click="Fwd_Click"/>
                     <Button x:Name="UpBtn" Style="{StaticResource ToolButton}" Content="&#xE74A;" ToolTip="상위 폴더 (Backspace)" Click="Up_Click"/>
                     <Button Style="{StaticResource ToolButton}" Content="&#xE72C;" ToolTip="새로 고침 (F5)" Click="Refresh_Click"/>
+                    <Border Width="1" Margin="5,5" Background="{StaticResource Line}"/>
+                    <Button x:Name="ListModeBtn" Style="{StaticResource ToolButton}" Content="&#xE8FD;" ToolTip="목록 보기 (Ctrl+Shift+1)" Click="ListMode_Click"/>
+                    <Button x:Name="TileModeBtn" Style="{StaticResource ToolButton}" Content="&#xECA5;" ToolTip="타일 보기 (Ctrl+Shift+2)" Click="TileMode_Click"/>
                 </StackPanel>
                 <Grid Grid.Column="1" Margin="6,0">
                     <TextBox x:Name="Address" Style="{StaticResource HintBox}" Tag="경로 입력 (Ctrl+L)" KeyDown="Address_KeyDown" LostKeyboardFocus="Address_LostFocus"/>

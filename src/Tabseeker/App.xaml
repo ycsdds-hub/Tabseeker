@@ -86,14 +86,52 @@
 
         <BooleanToVisibilityConverter x:Key="BoolVis"/>
 
-        <!-- name cell: hovering the name text (Tag=MemoAnchor) opens the memo bubble; the note mark shows a memo exists -->
+        <!-- blue dot = this file/folder has a Tabseeker memo -->
+        <SolidColorBrush x:Key="MemoDot" Color="#2F80ED"/>
+
+        <!-- name cell: hovering the name text (Tag=MemoAnchor) opens the memo bubble -->
         <DataTemplate x:Key="NameCell">
             <StackPanel Orientation="Horizontal">
                 <Image Source="{Binding Icon}" Width="16" Height="16" Margin="0,0,6,0"/>
                 <TextBlock Tag="MemoAnchor" Text="{Binding ShownName}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Background="Transparent"/>
-                <TextBlock Text="&#xE70B;" FontFamily="Segoe MDL2 Assets" FontSize="11" Foreground="#C9A227" Margin="6,1,0,0"
-                           VerticalAlignment="Center" Visibility="{Binding HasMemo, Converter={StaticResource BoolVis}}"/>
+                <Ellipse Width="7" Height="7" Fill="{StaticResource MemoDot}" Margin="6,1,0,0" VerticalAlignment="Center"
+                         ToolTip="메모 있음" Visibility="{Binding HasMemo, Converter={StaticResource BoolVis}}"/>
             </StackPanel>
         </DataTemplate>
+
+        <!-- tile view: big icon / picture thumbnail, name, type, size·date -->
+        <DataTemplate x:Key="TileItem">
+            <Grid Width="240" Height="68" Background="Transparent">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="64"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Grid Width="56" Height="56" VerticalAlignment="Center" HorizontalAlignment="Center">
+                    <Image Source="{Binding Thumbnail}" Stretch="Uniform" MaxWidth="56" MaxHeight="56" RenderOptions.BitmapScalingMode="HighQuality"/>
+                    <Ellipse Width="11" Height="11" Fill="{StaticResource MemoDot}" Stroke="White" StrokeThickness="1.5"
+                             HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,1,1,0"
+                             ToolTip="메모 있음" Visibility="{Binding HasMemo, Converter={StaticResource BoolVis}}"/>
+                </Grid>
+                <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="4,0,6,0">
+                    <TextBlock Tag="MemoAnchor" Text="{Binding ShownName}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"
+                               HorizontalAlignment="Left" Background="Transparent"/>
+                    <TextBlock Text="{Binding TypeText}" Foreground="{StaticResource Muted}" FontSize="11.5" TextTrimming="CharacterEllipsis"/>
+                    <TextBlock Text="{Binding TileDetail}" Foreground="{StaticResource Muted}" FontSize="11.5" TextTrimming="CharacterEllipsis"/>
+                </StackPanel>
+            </Grid>
+        </DataTemplate>
+
+        <Style x:Key="TileContainer" TargetType="ListViewItem">
+            <Setter Property="Margin" Value="2"/>
+            <Setter Property="Padding" Value="2"/>
+            <Setter Property="Opacity" Value="{Binding Opacity}"/>
+        </Style>
+
+        <ItemsPanelTemplate x:Key="TilePanel">
+            <WrapPanel Orientation="Horizontal"/>
+        </ItemsPanelTemplate>
+        <ItemsPanelTemplate x:Key="ListPanel">
+            <VirtualizingStackPanel/>
+        </ItemsPanelTemplate>
     </Application.Resources>
 </Application>

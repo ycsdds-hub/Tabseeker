@@ -53,6 +53,34 @@ public sealed class FileItem : System.ComponentModel.INotifyPropertyChanged
     public ImageSource? Icon => ShellIcons.Get(FullPath, IsDir);
     public double Opacity => IsHidden ? 0.55 : 1.0;
 
+    // ---- tile view
+    private ImageSource? _thumb;
+    private int _thumbGen = -1;
+
+    /// <summary>Big icon, or a picture/video thumbnail, loaded in the background (small icon until then).</summary>
+    public ImageSource? Thumbnail
+    {
+        get
+        {
+            if (_thumb != null) return _thumb;
+            var key = ShellThumbnails.KeyFor(FullPath, IsDir);
+            var cached = ShellThumbnails.Cached(key);
+            if (cached != null) return _thumb = cached;
+            if (_thumbGen != ShellThumbnails.Generation) // not asked yet, or the request was dropped by a reload
+            {
+                _thumbGen = ShellThumbnails.Generation;
+                ShellThumbnails.Request(FullPath, key, img =>
+                {
+                    _thumb = img;
+                    PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(nameof(Thumbnail)));
+                });
+            }
+            return Icon;
+        }
+    }
+
+    public string TileDetail => IsDir ? ModifiedText : $"{SizeText}  ·  {ModifiedText}";
+
     private void EnsureStat()
     {
         if (_statLoaded) return;

@@ -62,6 +62,9 @@ public partial class MemoBubble : Window
         ItemName.Text = item.ShownName;
         ItemName.ToolTip = item.FullPath;
         ItemIcon.Source = item.Icon;
+        var winComment = WindowsComment(item.FullPath);
+        WinComment.Text = winComment == null ? "" : "Windows 설명 (파일 자체 정보): " + winComment;
+        WinCommentBox.Visibility = winComment == null ? Visibility.Collapsed : Visibility.Visible;
         UpdateChrome(memo);
         if (!Reposition()) { HideBubble(); return; }
         if (!IsVisible) Show();
@@ -208,6 +211,28 @@ public partial class MemoBubble : Window
     {
         Reposition();
         if (Item != null && (Editor.Text.Length > 0)) { _dirty = true; SaveNow(); }
+    }
+
+    // ------------------------------------------------------------ Windows' own description
+
+    private static readonly Type? ShellType = Type.GetTypeFromProgID("Shell.Application");
+
+    /// <summary>
+    /// What Explorer shows as the file's description/comment (System.Comment): a shortcut's "설명", an installer's or
+    /// document's comment. Written by whoever made the file — never by Tabseeker. Null when empty.
+    /// </summary>
+    private static string? WindowsComment(string path)
+    {
+        if (ShellType == null || path.Length <= 3) return null;
+        try
+        {
+            dynamic shell = Activator.CreateInstance(ShellType)!;
+            dynamic? folder = shell.NameSpace(System.IO.Path.GetDirectoryName(path));
+            dynamic? item = folder?.ParseName(System.IO.Path.GetFileName(path));
+            string? value = item?.ExtendedProperty("System.Comment") as string;
+            return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+        }
+        catch { return null; }
     }
 
     // ------------------------------------------------------------ monitor work area

@@ -17,6 +17,8 @@ public interface IShell
     void ViewChanged(FrameworkElement view);
     bool ShowHidden { get; }
     MemoController Memos { get; }
+    /// <summary>Tile view instead of the detail list (all folder tabs, remembered).</summary>
+    bool TileView { get; set; }
 }
 
 internal static class ListHelpers

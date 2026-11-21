@@ -51,6 +51,19 @@ public partial class MainWindow : Window, IShell
     public bool ShowHidden => _settings.ShowHidden;
     public MemoController Memos { get; }
 
+    public bool TileView
+    {
+        get => _settings.TileView;
+        set
+        {
+            if (_settings.TileView == value) return;
+            _settings.TileView = value;
+            _settings.Save();
+            Memos.Hide();
+            foreach (var fv in _tabs.Select(t => t.View).OfType<FolderView>()) fv.ApplyViewMode();
+        }
+    }
+
     public MainWindow(string[] args)
     {
         InitializeComponent();
@@ -259,6 +272,7 @@ public partial class MainWindow : Window, IShell
     private void BuildNav()
     {
         Nav.Children.Clear();
+        _navNodes.Clear();
         AddSection("즐겨찾기");
         if (_settings.Favorites.Count == 0)
             Nav.Children.Add(new TextBlock { Text = "폴더를 여기로 끌어오거나\nCtrl+D 로 추가", Foreground = Brushes.Gray, FontSize = 11.5, Margin = new Thickness(10, 2, 0, 6) });
@@ -273,7 +287,6 @@ public partial class MainWindow : Window, IShell
         AddEntry("내 폴더", home);
 
         AddSection("내 PC");
-        AddEntry(FolderView.ThisPC, FolderView.ThisPC);
         foreach (var d in DriveInfo.GetDrives().Where(d => d.IsReady))
         {
             string label;
@@ -282,32 +295,18 @@ public partial class MainWindow : Window, IShell
         }
     }
 
+    /// <summary>"Show hidden" changed: subfolder lists must be read again.</summary>
+    private void ResetNavTree() { foreach (var n in _navNodes) n.Reset(); }
+
     private void AddSection(string title) =>
         Nav.Children.Add(new TextBlock { Text = title, FontWeight = FontWeights.SemiBold, Foreground = (Brush)FindResource("Muted"), FontSize = 11.5, Margin = new Thickness(6, 10, 0, 3) });
 
+    private readonly List<NavNode> _navNodes = new();
+
+    /// <summary>A top-level folder in the left pane: click opens it and unfolds its subfolders as a tree.</summary>
     private void AddEntry(string label, string path, bool favorite = false)
     {
         if (path != FolderView.ThisPC && !Directory.Exists(path) && !favorite) return;
-        var row = new Border { Padding = new Thickness(8, 4, 6, 4), CornerRadius = new CornerRadius(5), Background = Brushes.Transparent, Cursor = Cursors.Hand, ToolTip = path + "\n(가운데 클릭: 새 탭)" };
-        var sp = new StackPanel { Orientation = Orientation.Horizontal };
-        sp.Children.Add(new Image { Source = path == FolderView.ThisPC ? ShellIcons.Get("C:\\", true) : ShellIcons.Get(path, true), Width = 16, Height = 16, Margin = new Thickness(0, 0, 7, 0) });
-        sp.Children.Add(new TextBlock { Text = label, TextTrimming = TextTrimming.CharacterEllipsis, Opacity = Directory.Exists(path) || path == FolderView.ThisPC ? 1 : 0.45 });
-        row.Child = sp;
-        row.MouseEnter += (_, _) => row.Background = (Brush)FindResource("Hover");
-        row.MouseLeave += (_, _) => row.Background = Brushes.Transparent;
-        row.MouseUp += (_, e) =>
-        {
-            if (e.ChangedButton == MouseButton.Left) NavigateActive(path);
-            else if (e.ChangedButton == MouseButton.Middle) AddFolderTab(path, false);
-        };
-        row.AllowDrop = path != FolderView.ThisPC;
-        row.DragOver += (_, e) => { e.Effects = ListHelpers.DropEffect(e, path); e.Handled = true; };
-        row.Drop += (_, e) =>
-        {
-            if (e.Data.GetData(DataFormats.FileDrop) is string[] files)
-                FileOps.Transfer(files, path, ListHelpers.DropEffect(e, path) == DragDropEffects.Move);
-            e.Handled = true;
-        };
         var menu = new ContextMenu();
         menu.Items.Add(ListHelpers.Item("새 탭에서 열기", () => AddFolderTab(path, true)));
         menu.Items.Add(ListHelpers.Item("탐색기에서 열기", () => FileOps.OpenFolderInExplorer(path == FolderView.ThisPC ? "shell:MyComputerFolder" : path)));
@@ -319,8 +318,9 @@ public partial class MainWindow : Window, IShell
             menu.Items.Add(ListHelpers.Item("즐겨찾기에서 제거", () => { _settings.Favorites.Remove(path); _settings.Save(); BuildNav(); }));
         }
         else if (path != FolderView.ThisPC) menu.Items.Add(ListHelpers.Item("즐겨찾기에 추가", () => AddFavorite(path)));
-        row.ContextMenu = menu;
-        Nav.Children.Add(row);
+        var node = new NavNode(this, label, path, 0, menu);
+        _navNodes.Add(node);
+        Nav.Children.Add(node.Element);
     }
 
     private void MoveFavorite(string path, int delta)
@@ -510,6 +510,7 @@ public partial class MainWindow : Window, IShell
         _settings.ShowHidden = HiddenItem.IsChecked;
         _settings.Save();
         foreach (var fv in _tabs.Select(t => t.View).OfType<FolderView>()) fv.Refresh();
+        ResetNavTree();
     }
 
     private void Reindex_Click(object sender, RoutedEventArgs e) => _index.RequestRebuild();
@@ -520,6 +521,8 @@ public partial class MainWindow : Window, IShell
         Memos.HoverForEmpty = MemoEmptyItem.IsChecked;
         _settings.Save();
     }
+
+    private void ShellMenu_Click(object sender, RoutedEventArgs e) => new ShellMenuWindow { Owner = this }.ShowDialog();
 
     private void MemoList_Click(object sender, RoutedEventArgs e)
     {
